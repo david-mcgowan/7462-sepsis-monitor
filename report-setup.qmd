@@ -1,0 +1,84 @@
+---
+title: "Tasks 1-3, 7462 HW7"
+author: "David McGowan"
+format: html
+---
+
+```{r setup}
+#| include: FALSE
+#| echo: FALSE
+
+library(tidyverse)
+library(data.table) # for fread()
+library(lubridate)
+library(tictoc)
+library(googledrive)
+
+source("sepsis_monitor_functions.R")
+```
+
+
+```{r}
+#| eval: FALSE
+#| include: FALSE
+
+## using tictoc to speed read
+
+# 50 patients:
+
+tic()
+makeSepsisDataset(n = 50, read_fn = "fread")
+toc()
+# 5.08 seconds
+
+tic()
+makeSepsisDataset(n = 50, read_fn = "read_delim")
+toc()
+# 22.74 seconds
+
+# 100 patients:
+
+tic()
+makeSepsisDataset(n = 100, read_fn = "fread")
+toc()
+# 9.69 seconds
+
+tic()
+makeSepsisDataset(n = 100, read_fn = "read_delim")
+toc()
+# 53.37 seconds
+
+# 500 patients:
+
+tic()
+makeSepsisDataset(n = 500, read_fn = "fread")
+toc()
+# 48.36 seconds
+
+tic()
+makeSepsisDataset(n = 500, read_fn = "read_delim")
+toc()
+# 285.73 seconds
+
+# we see VERY big differences between the two reading functions!
+```
+
+
+```{r}
+#| eval: FALSE
+#| include: FALSE
+df <- makeSepsisDataset()
+
+# We have to write the file to disk first, then upload it
+df %>%
+  write_csv("sepsis_data_temp.csv")
+
+# Uploading happens here
+sepsis_file <- drive_put(media = "sepsis_data_temp.csv", 
+          path = "https://drive.google.com/drive/folders/1rHYC-lBN6jEeFaQDQr8VHj9B_wXDfght",
+          name = "sepsis_data.csv")
+
+# Set the file permissions so anyone can download this file
+sepsis_file %>% drive_share_anyone()
+```
+

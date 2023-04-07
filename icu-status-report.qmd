@@ -1,0 +1,123 @@
+---
+title: "ICU Status Report (7462 HW7)"
+author: "David McGowan"
+execute:
+  echo: false
+  warning: false
+  message: false
+format: html
+---
+
+```{r setup}
+#| include: FALSE
+
+library(tidyverse)
+library(data.table) # for fread()
+library(lubridate)
+library(googledrive)
+library(knitr)
+
+source("sepsis_monitor_functions.R")
+```
+
+```{r}
+#| include: FALSE
+
+# getting the data
+
+## Calling drive_deauth() prevents R from trying to authenticate via a browser
+## This is needed to make the GitHub Action work
+drive_deauth()
+file_link <- "https://drive.google.com/file/d/1w6UBWJRckb5MGBYQCZgAXc6tOyfilgvv/view"
+
+## All data up until now
+new_data <- updateData(file_link)
+
+## Include only most recent data
+most_recent_data <- new_data %>%
+  group_by(PatientID) %>%
+  filter(obsTime == max(obsTime))
+```
+
+This report was produced at `r Sys.time()`.
+
+```{r}
+most_recent_data %>%
+  filter(SepsisLabel == 1) %>%
+  select(PatientID, HR, Temp, Resp) %>%
+  rename(`Patient ID` = PatientID,
+         `Heart Rate` = HR,
+         `Temperature` = Temp,
+         `Respiratory Rate` = Resp) %>%
+  kable(caption = "Current Stats of Septic Patients")
+```
+
+```{r}
+# identify patients who have sepsis
+septic_ids <- new_data %>%
+  filter(SepsisLabel == 1) %>%
+  select(PatientID) %>%
+  unique() %>%
+  .$PatientID
+
+# heart rate plot
+new_data %>%
+  filter(PatientID %in% septic_ids) %>%
+  ggplot() +
+  geom_line(aes(x = ICULOS, y = HR, group = PatientID,
+                color = PatientID), alpha = .5) +
+  labs(x = "Hours in ICU",
+       y = "Heart Rate",
+       color = "Patient ID",
+       title = "Heart Rate Over Time for Septic Patients")
+
+# respiratory rate plot
+new_data %>%
+  filter(PatientID %in% septic_ids) %>%
+  ggplot() +
+  geom_line(aes(x = ICULOS, y = Resp, group = PatientID,
+                color = PatientID), alpha = .5) +
+  labs(x = "Hours in ICU",
+       y = "Respiratory Rate",
+       color = "Patient ID",
+       title = "Respiratory Rate Over Time for Septic Patients")
+
+# temperature plot
+new_data %>%
+  filter(PatientID %in% septic_ids) %>%
+  ggplot() +
+  geom_line(aes(x = ICULOS, y = Temp, group = PatientID,
+                color = PatientID), alpha = .5) +
+  labs(x = "Hours in ICU",
+       y = "Temperature",
+       color = "Patient ID",
+       title = "Temperature Over Time for Septic Patients")
+```
+
+```{r}
+last_obs <- new_data %>%
+  group_by(PatientID) %>%
+  slice_max(order_by = obsTime, n = 2) %>%
+  slice_max(order_by = obsTime, n = 1) %>%
+  select(-c(ICULOS, SepsisLabel, obsTime)) %>%
+  rename(HR_last = HR,
+         Temp_last = Temp,
+         Resp_last = Resp)
+
+penultimate_obs <- new_data %>%
+  group_by(PatientID) %>%
+  slice_max(order_by = obsTime, n = 2) %>%
+  slice_min(order_by = obsTime, n = 1) %>%
+  select(-c(ICULOS, SepsisLabel, obsTime)) %>%
+  rename(HR_penult = HR,
+         Temp_penult = Temp,
+         Resp_penult = Resp)
+
+full_join(last_obs, penultimate_obs) %>%
+  transmute(PatientID,
+             `Temperature change` = Temp_last - Temp_penult,
+             `Heart rate change` = HR_last - HR_penult,
+             `Respiratory rate change` = Resp_last - Resp_penult) %>%
+  kable(caption = "Patients' Recent Changes in Vital Stats")
+```
+
