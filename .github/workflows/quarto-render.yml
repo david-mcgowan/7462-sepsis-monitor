@@ -33,12 +33,8 @@ jobs:
                any::knitr
                any::rmarkdown
                any::jsonlite
-               any::dplyr
-               any::ggplot2
-               any::readr
+               any::tidyverse
                any::lubridate
-               any::forcats
-               any::magrittr
                any::data.table
                any::googledrive
 
