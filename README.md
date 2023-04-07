@@ -1,3 +1,3 @@
-# 7462-sepsis-monitor
+# 7462 ICU Status Report
 
-Source repository for PUBH 7462 Assignment 7. See Assignment instructions on Canvas.
+To see an up-to-date ICU status report, please download icu-status-report.html and the icu-status-report_files folder. This report updates every hour; to see an update to the report, you'll need to re-download the files.
