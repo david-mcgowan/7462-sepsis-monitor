@@ -41,7 +41,7 @@ jobs:
       - name: Render document
         uses: quarto-dev/quarto-actions/render@v2
         with:
-          to: html_document
+          to: html
           path: icu-status-report.qmd
 
       - name: Setup git config
